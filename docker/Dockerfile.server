@@ -1,0 +1,19 @@
+# Server Dockerfile
+
+# Import base image
+FROM golang:latest
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod and sum files
+COPY server/go.mod server/go.sum ./
+
+# Download all dependencies
+RUN go mod download
+
+# Copy files
+COPY server .
+
+# # Build and then start the server
+CMD [ "sh", "-c", "go build -o ./bin/server ./cmd/server && ./bin/server" ]

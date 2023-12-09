@@ -1,0 +1,10 @@
+# Database Dockerfile
+
+# Base image
+FROM mariadb:latest
+
+# Copy SQL init file into database init directory
+COPY ./docker/database/init.sql /docker-entrypoint-initdb.d/
+
+# Set working directory
+WORKDIR /app
