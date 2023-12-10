@@ -3,13 +3,10 @@ package server
 import (
 	"epseed/internal/db"
 	"fmt"
-	"net/http"
 	"time"
-
-	"github.com/rs/cors"
 )
 
-func InitServer() {
+func handleDatabaseConnection() (e error) {
 	var nbTry int = 0
 	var err error
 	for nbTry < 3 {
@@ -25,23 +22,24 @@ func InitServer() {
 	}
 	if nbTry == 3 {
 		fmt.Println("Erreur de connexion à la base de données après 3 tentatives, arrêt du serveur...")
+		return err
+	}
+
+	return nil
+}
+
+func InitServer() {
+	err := handleDatabaseConnection()
+	if err != nil {
 		return
 	}
+
 	sqlDB, err := db.DbInstance.DB()
 	if err != nil {
-		fmt.Println("Erreur de connexion à la base de données:", err)
+		fmt.Println("Erreur lors de la récupération de la base de données")
 		return
 	}
 	defer sqlDB.Close()
 
 	InitRoutes()
-
-	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:8081"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders: []string{"*"},
-	})
-
-	handler := c.Handler(http.DefaultServeMux)
-	http.ListenAndServe(":8080", handler)
 }

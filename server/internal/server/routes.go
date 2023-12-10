@@ -1,49 +1,66 @@
 package server
 
 import (
-	"epseed/internal/handler"
-	"fmt"
-	"net/http"
+	"epseed/internal/controllers"
+	"epseed/internal/services"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
-func logCallMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Appel de l'API:", r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
+func initAuthGroup(router *gin.Engine) {
+	authService := &services.AuthService{}
+	userService := &services.UserService{}
+
+	authController := &controllers.AuthController{
+		AuthService: authService,
+		UserService: userService,
+	}
+
+	authGroup := router.Group("/auth")
+	{
+		authGroup.POST("/login", authController.Login)
+		authGroup.POST("/signup", authController.Signup)
+	}
 }
 
-func AuthRouter() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/auth/login", handler.LoginHandler).Methods("POST")
-	r.HandleFunc("/auth/signup", handler.SignupHandler).Methods("POST")
-	return r
+func initNotesGroup(router *gin.Engine) {
+	noteService := &services.NoteService{}
+	noteController := &controllers.NoteController{NoteService: noteService}
+
+	notesGroup := router.Group("/notes")
+	{
+		notesGroup.GET("/", noteController.GetNotes)
+		notesGroup.POST("/", noteController.CreateNote)
+		notesGroup.PUT("/", noteController.UpdateNote)
+		notesGroup.DELETE("/", noteController.DeleteNote)
+	}
 }
 
-func NotesRouter() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/notes/get", handler.GetNotesForUserHandler).Methods("GET")
-	r.HandleFunc("/notes/create", handler.CreateNoteHandler).Methods("POST")
-	r.HandleFunc("/notes/update", handler.UpdateNoteHandler).Methods("PUT")
-	r.HandleFunc("/notes/delete", handler.DeleteNoteHandler).Methods("DELETE")
-	return r
-}
+func initUsersGroup(router *gin.Engine) {
+	userService := &services.UserService{}
+	userController := &controllers.UserController{UserService: userService}
 
-func UserRouter() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/users/get", handler.GetUsersHandler).Methods("GET")
-	return r
+	usersGroup := router.Group("/users")
+	{
+		usersGroup.GET("/", userController.GetUsers)
+	}
 }
 
 func InitRoutes() {
-	r := mux.NewRouter()
-	r.Use(logCallMiddleware)
+	router := gin.Default()
 
-	r.PathPrefix("/auth").Handler(AuthRouter())
-	r.PathPrefix("/notes").Handler(NotesRouter())
-	r.PathPrefix("/users").Handler(UserRouter())
+	cors := cors.New(cors.Config{
+		AllowOrigins: []string{"http://localhost:8081"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders: []string{"Content-Type"},
+	})
 
-	http.Handle("/", r)
+	router.Use(cors)
+
+	initAuthGroup(router)
+	initNotesGroup(router)
+	initUsersGroup(router)
+
+	router.Run(":8080")
 }

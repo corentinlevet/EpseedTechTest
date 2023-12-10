@@ -1,6 +1,9 @@
 package db
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -9,6 +12,24 @@ import (
 )
 
 var DbInstance *gorm.DB
+
+const saltSize = 32
+
+func GenerateSalt() (string, error) {
+	saltBytes := make([]byte, saltSize)
+	_, err := rand.Read(saltBytes)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(saltBytes), nil
+}
+
+func HashPassword(password, salt string) string {
+	hash := sha256.New()
+	hash.Write([]byte(password + salt))
+	hashedPassword := hex.EncodeToString(hash.Sum(nil))
+	return hashedPassword
+}
 
 func ConnectToMariaDB() (*gorm.DB, error) {
 	dbUser := os.Getenv("MYSQL_USER")
