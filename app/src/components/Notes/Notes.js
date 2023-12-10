@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import goServer from '../../api/go-server';
 
-function displayNotes(notes, selectNoteForEdit, deleteNote) {
+function displayNotes(notes, selectNoteForEdit, confirmAndDelete) {
   return (
     <ul className="list-group">
       {notes.map((note, index) => (
@@ -11,7 +11,7 @@ function displayNotes(notes, selectNoteForEdit, deleteNote) {
           <button className="btn btn-info me-2" onClick={() => selectNoteForEdit(index)}>
             Modify
           </button>
-          <button className="btn btn-danger" onClick={() => deleteNote(index)}>
+          <button className="btn btn-danger" onClick={() => confirmAndDelete(index)}>
             Delete
           </button>
         </li>
@@ -86,6 +86,14 @@ function Notes() {
     setShowForm(true);
   };
 
+  const confirmAndDelete = (index) => {
+    const isConfirmed = window.confirm("Are you sure you want to delete this note?");
+
+    if (isConfirmed) {
+      deleteNote(index);
+    }
+  };
+
   const deleteNote = (index) => {
     const noteID = notes[index].id;
 
@@ -133,7 +141,7 @@ function Notes() {
 
       {showForm && notesForm(newNoteTitle, newNoteContent, setNewNoteTitle, setNewNoteContent, addNote, selectedNote)}
 
-      {!showForm && displayNotes(notes, selectNoteForEdit, deleteNote)}
+      {!showForm && displayNotes(notes, selectNoteForEdit, confirmAndDelete)}
     </div>
   );
 }
